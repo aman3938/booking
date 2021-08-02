@@ -37,6 +37,10 @@ Keep-Alive: timeout=60
 
 ### Availability
 
+
+	curl GET 'http://localhost:8938/availability/
+
+
 <pre>
 HTTP/1.1 200 
 Connection: keep-alive
