@@ -3,8 +3,10 @@ package com.pacificvolcano.booking.service;
 import java.security.InvalidParameterException;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.HashSet;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -46,6 +48,32 @@ public class BookingSvc {
           throw new NoSuchElementException("This booking doesn't exist");
       }
       bookingRepository.delete(booking.get());
+  }
+  
+  @Transactional
+  public BookingDto updateBooking(long id, BookingDto dto) {
+      Booking booking = bookingRepository.findById(id).orElseThrow(() -> new InvalidParameterException("Booking not found"));
+      if(booking.getUpdatedAt() != null && !booking.getUpdatedAt().equals(dto.getUpdatedAt())) {
+          throw new IllegalStateException("Booking has been updated in meantime. Please fetch and update again");
+      }
+      LocalDate fromDate = dto.getFromDate();
+      LocalDate toDate = dto.getToDate();
+      
+      Set<BookingDate> oldDates = new HashSet<>(booking.getBookingDates());
+      for (BookingDate date: oldDates) {
+          booking.removeBookingDate(date);
+      }
+      
+      validateToAndFromDate(fromDate, toDate);        
+      for(LocalDate i = booking.getFromDate(); i.compareTo(booking.getToDate()) <= 0; i = i.plusDays(1)) {
+          booking.addBookingDate(new BookingDate(i));
+      }
+      booking.setEmail(dto.getEmail());
+      booking.setFirstName(dto.getFirstName());
+      booking.setLastName(dto.getLastName());
+      
+      booking = bookingRepository.save(booking);
+      return BookingDto.from(booking);
   }
   
   private void validateToAndFromDate(LocalDate fromDate, LocalDate toDate) {
