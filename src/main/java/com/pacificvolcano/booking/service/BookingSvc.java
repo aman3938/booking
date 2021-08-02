@@ -3,7 +3,9 @@ package com.pacificvolcano.booking.service;
 import java.security.InvalidParameterException;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
@@ -12,15 +14,47 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.pacificvolcano.booking.domain.BookingStatus;
 import com.pacificvolcano.booking.dto.BookingDto;
 import com.pacificvolcano.booking.jpa.Booking;
 import com.pacificvolcano.booking.jpa.BookingDate;
+import com.pacificvolcano.booking.repository.BookingDateRepository;
 import com.pacificvolcano.booking.repository.BookingRepository;
 
 @Service
 public class BookingSvc {
   @Autowired
   private BookingRepository bookingRepository;
+  @Autowired
+  private BookingDateRepository bookingDateRepository;
+  
+  @Transactional(readOnly = true)
+  public List<LocalDate> getAvailableDates(LocalDate fromDate, LocalDate toDate){
+      if(fromDate.isBefore(LocalDate.now())) {
+          fromDate = LocalDate.now();
+      }
+      
+      if(toDate.isAfter(LocalDate.now().plusDays(29))) {
+          toDate = LocalDate.now().plusDays(29);
+      }
+      
+      if(fromDate.isAfter(toDate)) {
+          fromDate = toDate;
+      }
+      
+      List<LocalDate> availableDates = new ArrayList<>();
+      for(LocalDate i = fromDate; i.compareTo(toDate) <=0; i = i.plusDays(1)) {
+          availableDates.add(i);
+      }
+      
+      List<BookingDate> allDates = bookingDateRepository.findByCampsiteDateGreaterThan(fromDate.minusDays(1));
+      for(BookingDate date: allDates) {
+          if(BookingStatus.BOOKED.equals(date.getStatus())) {
+              availableDates.remove(date.getCampsiteDate());
+          }
+      }
+      return availableDates;
+  }
   
   @Transactional
   public Long createBooking(BookingDto bookingDto) {

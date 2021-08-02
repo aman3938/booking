@@ -1,6 +1,8 @@
 package com.pacificvolcano.booking.controller;
 
 import java.security.InvalidParameterException;
+import java.time.LocalDate;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,6 +69,17 @@ public class BookingController {
       }catch (Exception e) {
           return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(e.getMessage());
       }   
+  }
+  
+  @GetMapping(path="/availability")
+  public List<LocalDate> getAvailableDates(){
+      return bookingSvc.getAvailableDates(LocalDate.now(), LocalDate.now().plusDays(29));
+  }
+  
+  @GetMapping(path="/availability/{fromDate}/{toDate}")
+  public List<LocalDate> getAvailableDates(@PathVariable("fromDate") LocalDate fromDate,
+                                             @PathVariable("toDate") LocalDate toDate){
+      return bookingSvc.getAvailableDates(fromDate, toDate);
   }
 
 }
